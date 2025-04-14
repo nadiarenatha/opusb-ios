@@ -7,7 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:niaga_apps_mobile/services/niaga%20service/warehouse/report_warehouse_service.dart';
-
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../shared/constants.dart';
 
 class ReportWarehouseServiceImpl implements ReportWarehouseService {
@@ -23,11 +24,6 @@ class ReportWarehouseServiceImpl implements ReportWarehouseService {
   @override
   Future<bool> downloadReportWarehousePdf() async {
     try {
-      if (!(await _requestStoragePermissions())) {
-        print("Permission denied!");
-        return false;
-      }
-
       final ownerCode = await storage.read(
         key: AuthKey.ownerCode.toString(),
         aOptions: const AndroidOptions(encryptedSharedPreferences: true),
@@ -38,41 +34,54 @@ class ReportWarehouseServiceImpl implements ReportWarehouseService {
         aOptions: const AndroidOptions(encryptedSharedPreferences: true),
       );
 
-      String fileName = 'Warehouse_${DateFormat('yyyyMMddHHmmss').format(DateTime.now())}.xlsx';
-      String url = 'https://niagaapps.niaga-logistics.com/api/report-warehouse-stock?email=$email';
+      String fileName =
+          'Warehouse_${DateFormat('yyyyMMddHHmmss').format(DateTime.now())}.xlsx';
+      String url =
+          'https://niagaapps.niaga-logistics.com/api/report-warehouse-stock?email=$email';
 
       if (ownerCode != null && ownerCode != "ONLINE") {
         url += '&owner_code=$ownerCode';
       }
 
-      int sdkInt = await _getAndroidVersion();
+      if (Platform.isIOS) {
+        final dir = await getApplicationDocumentsDirectory();
+        final filePath = '${dir.path}/$fileName';
 
+        final response = await dio.get(
+          url,
+          options: Options(responseType: ResponseType.bytes),
+        );
+
+        File file = File(filePath);
+        await file.writeAsBytes(response.data);
+
+        // Optional: Open file or share it
+        await OpenFile.open(filePath);
+        print("iOS: File saved at $filePath");
+
+        return true;
+      }
+
+      // Existing Android logic here...
+      int sdkInt = await _getAndroidVersion();
       if (sdkInt >= 30) {
         return await _saveFileToDownloadsAndroid11(url, fileName);
       } else {
         Directory directory = Directory('/storage/emulated/0/Download');
         String filePath = '${directory.path}/$fileName';
 
-        try {
-          await dio.download(url, filePath);
-          print("File downloaded to: $filePath");
-          scanFile(filePath);
-          return true;
-        } catch (e) {
-          print("Download error: $e");
-          return false;
-        }
+        await dio.download(url, filePath);
+        scanFile(filePath);
+        return true;
       }
-    } on DioError catch (e) {
-      log.e("Dio error: $e");
-      return false;
     } catch (e) {
-      log.e("Unexpected error: $e");
+      log.e("Download error: $e");
       return false;
     }
   }
 
-  Future<bool> _saveFileToDownloadsAndroid11(String url, String fileName) async {
+  Future<bool> _saveFileToDownloadsAndroid11(
+      String url, String fileName) async {
     try {
       final response = await dio.get(
         url,
@@ -92,20 +101,6 @@ class ReportWarehouseServiceImpl implements ReportWarehouseService {
       print("Error saving file: $e");
       return false;
     }
-  }
-
-  Future<bool> _requestStoragePermissions() async {
-    if (Platform.isAndroid) {
-      int sdkInt = await _getAndroidVersion();
-
-      if (sdkInt < 30) {
-        return await Permission.storage.request().isGranted;
-      }
-
-      return true;
-    }
-
-    return true;
   }
 
   Future<int> _getAndroidVersion() async {

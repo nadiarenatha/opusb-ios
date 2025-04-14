@@ -22,7 +22,8 @@ class ReportInvoiceServiceImpl implements ReportInvoiceService {
   });
 
   @override
-  Future<bool> downloadReportInvoicePdf(String invoiceNumber, String volume) async {
+  Future<bool> downloadReportInvoicePdf(
+      String invoiceNumber, String volume) async {
     try {
       if (!(await _requestStoragePermissions())) {
         print("Permission denied!");
@@ -30,27 +31,61 @@ class ReportInvoiceServiceImpl implements ReportInvoiceService {
       }
 
       String sanitizedNoPL = invoiceNumber.replaceAll('/', '_');
-      String fileName = 'Invoice_${sanitizedNoPL}_${DateFormat('yyyyMMddHHmmss').format(DateTime.now())}.pdf';
-      String url = 'https://niagaapps.niaga-logistics.com/api/report-invoice?baseUrl=https://api-app.niaga-logistics.com/api/v1/summary_invoice&invoice_number=$invoiceNumber&type_pengiriman=$volume';
+      String fileName =
+          'Invoice_${sanitizedNoPL}_${DateFormat('yyyyMMddHHmmss').format(DateTime.now())}.pdf';
+      String url =
+          'https://niagaapps.niaga-logistics.com/api/report-invoice?baseUrl=https://api-app.niaga-logistics.com/api/v1/summary_invoice&invoice_number=$invoiceNumber&type_pengiriman=$volume';
 
-      int sdkInt = await _getAndroidVersion();
+      final response = await dio.get(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
 
-      if (sdkInt >= 30) {
-        return await _saveFileToDownloadsAndroid11(url, fileName);
-      } else {
-        Directory directory = Directory('/storage/emulated/0/Download');
-        String filePath = '${directory.path}/$fileName';
+      final Uint8List fileData = Uint8List.fromList(response.data);
 
-        try {
-          await dio.download(url, filePath);
-          print("File downloaded to: $filePath");
+      String filePath = '';
+
+      if (Platform.isAndroid) {
+        int sdkInt = await _getAndroidVersion();
+        if (sdkInt >= 30) {
+          filePath = "/storage/emulated/0/Download/$fileName";
+        } else {
+          Directory directory = Directory('/storage/emulated/0/Download');
+          filePath = '${directory.path}/$fileName';
+        }
+
+        File file = File(filePath);
+        await file.writeAsBytes(fileData);
+
+        if (await file.exists()) {
+          print("File saved to: $filePath");
           scanFile(filePath);
           return true;
-        } catch (e) {
-          print("Download error: $e");
+        } else {
+          print("Failed to save file on Android");
+          return false;
+        }
+      } else if (Platform.isIOS) {
+        final directory = await getApplicationDocumentsDirectory();
+        filePath = '${directory.path}/$fileName';
+
+        File file = File(filePath);
+        await file.writeAsBytes(fileData);
+
+        if (await file.exists()) {
+          print('File successfully saved on iOS at: $filePath');
+
+          // Optional: Uncomment to open the file right away
+          // await OpenFile.open(filePath);
+
+          return true;
+        } else {
+          print('File not found after writing on iOS!');
           return false;
         }
       }
+
+      return false;
     } on DioError catch (e) {
       log.e("Dio error: $e");
       return false;
@@ -60,7 +95,8 @@ class ReportInvoiceServiceImpl implements ReportInvoiceService {
     }
   }
 
-  Future<bool> _saveFileToDownloadsAndroid11(String url, String fileName) async {
+  Future<bool> _saveFileToDownloadsAndroid11(
+      String url, String fileName) async {
     try {
       final response = await dio.get(
         url,
