@@ -1,0 +1,38 @@
+import '../../../model/niaga/order.dart';
+
+abstract class CreateOrderLCLService {
+  Future<OrderAccesses> createOrderLCL(
+      String email,
+      String createdBy,
+      int userId,
+      String createdDate,
+      String businessUnit,
+      String portAsal,
+      String portTujuan,
+      String originalCity,
+      String originalAddress,
+      String cargoReadyDate,
+      String destinationCity,
+      String destinationAddress,
+      String destinationPicName,
+      String destinationPicNumber,
+      String contractNo,
+      String komoditi,
+      String productDescription,
+      int quantity,
+      int amount,
+      double userPanjang,
+      double userLebar,
+      double userTinggi,
+      double userTotalVolume,
+      int userTotalWeight,
+      String uom,
+      bool point,
+      String locidUocAsal,
+      String locidUocTujuan,
+      String locidPortAsal,
+      String locidPortTujuan,
+      int price,
+      int pointUse,
+      int amountCargo);
+}
