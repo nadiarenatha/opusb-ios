@@ -283,3 +283,28 @@ class LogDetailInvoiceFCLFailure extends InvoiceNiagaState {
   @override
   List<Object> get props => [message];
 }
+
+//get merchant code
+class MerchantCodeSuccess extends InvoiceNiagaState {
+  final List<MerchantCodeAccesses> response;
+
+  const MerchantCodeSuccess({
+    required this.response,
+  });
+
+  @override
+  List<Object> get props => [
+        response,
+      ];
+}
+
+class MerchantCodeInProgress extends InvoiceNiagaState {}
+
+class MerchantCodeFailure extends InvoiceNiagaState {
+  final String message;
+
+  const MerchantCodeFailure(this.message);
+
+  @override
+  List<Object> get props => [message];
+}

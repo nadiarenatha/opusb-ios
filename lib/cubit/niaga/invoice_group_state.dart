@@ -186,3 +186,28 @@ class DetailMultipleInvoiceFailure extends InvoiceGroupState {
   @override
   List<Object> get props => [message];
 }
+
+//get merchant code
+class MerchantCodeGroupSuccess extends InvoiceGroupState {
+  final List<MerchantCodeAccesses> response;
+
+  const MerchantCodeGroupSuccess({
+    required this.response,
+  });
+
+  @override
+  List<Object> get props => [
+        response,
+      ];
+}
+
+class MerchantCodeGroupInProgress extends InvoiceGroupState {}
+
+class MerchantCodeGroupFailure extends InvoiceGroupState {
+  final String message;
+
+  const MerchantCodeGroupFailure(this.message);
+
+  @override
+  List<Object> get props => [message];
+}

@@ -100,6 +100,8 @@ import 'package:niaga_apps_mobile/services/niaga%20service/invoice/invoice_open_
 import 'package:niaga_apps_mobile/services/niaga%20service/auth_niaga_service_niaga.dart';
 import 'package:niaga_apps_mobile/services/niaga%20service/invoice/invoice_single_service.dart';
 import 'package:niaga_apps_mobile/services/niaga%20service/invoice/invoice_single_service_impl.dart';
+import 'package:niaga_apps_mobile/services/niaga%20service/invoice/merchant_code_service.dart';
+import 'package:niaga_apps_mobile/services/niaga%20service/invoice/merchant_code_service_impl.dart';
 import 'package:niaga_apps_mobile/services/niaga%20service/invoice/report_invoice_service.dart';
 import 'package:niaga_apps_mobile/services/niaga%20service/invoice/report_invoice_service_impl.dart';
 import 'package:niaga_apps_mobile/services/niaga%20service/invoice/search_invoice_service.dart';
@@ -1045,6 +1047,12 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<CheckEmailService>(
     () => CheckEmailServiceImpl(
+      dio: sl(),
+      storage: sl(),
+    ),
+  );
+  sl.registerLazySingleton<MerchantCodeService>(
+    () => MerchantCodeServiceImpl(
       dio: sl(),
       storage: sl(),
     ),

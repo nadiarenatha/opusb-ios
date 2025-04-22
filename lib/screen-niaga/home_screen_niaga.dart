@@ -26,7 +26,7 @@ import '../simulasi-pengiriman/simulasi_pengiriman_niaga.dart';
 import '../stok-barang-gudang/stok_barang_niaga.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:showcaseview/showcaseview.dart';
+// import 'package:showcaseview/showcaseview.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import '../shared/constants.dart';
@@ -215,25 +215,25 @@ class _HomePageScreenNiagaState extends State<HomePageScreenNiaga> {
   // }
 
   void _navigateToTrackingPage() async {
-  if (_resiController.text.isNotEmpty) {
-    final shouldReset = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TrackingPencarianNiaga(noPL: _resiController.text),
-      ),
-    );
+    if (_resiController.text.isNotEmpty) {
+      final shouldReset = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TrackingPencarianNiaga(noPL: _resiController.text),
+        ),
+      );
 
-    // If user clicks back and returns `true`, clear the input field
-    if (shouldReset == true) {
-      setState(() {
-        _resiController.clear();
-      });
+      // If user clicks back and returns `true`, clear the input field
+      if (shouldReset == true) {
+        setState(() {
+          _resiController.clear();
+        });
+      }
+    } else {
+      print('Resi number is empty!');
     }
-  } else {
-    print('Resi number is empty!');
   }
-}
-
 
   void openWhatsApp(String phoneNumber) async {
     final String url = 'https://wa.me/$phoneNumber';

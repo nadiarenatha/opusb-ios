@@ -33,8 +33,7 @@ class EspayPaymentServiceImpl implements EspayPaymentService {
       String volume,
       String merchantId,
       String subMerchantId,
-      String cabang
-      ) async {
+      String cabang) async {
     log.i('espayPaymentValidation()');
     log.i(
         'espayPaymentValidation called with noInvoice: $noInvoice, totalInvoice: $totalInvoice, name: $name, value: $value, orderNumber: $orderNumber, invoiceNumber: $invoiceNumber, packingListNumber: $packingListNumber, ruteTujuan: $ruteTujuan, tipePengiriman: $tipePengiriman, volume: $volume, merchantId: $merchantId, subMerchantId: $subMerchantId');
@@ -78,7 +77,8 @@ class EspayPaymentServiceImpl implements EspayPaymentService {
           "amount": {"value": totalInvoice, "currency": "IDR"}, //
           "urlParam": {
             // "url": "https://elogistic-dev.opusb.co.id",
-            "url": "https://dev-apps.niaga-logistics.com",
+            // "url": "https://dev-apps.niaga-logistics.com",
+            "url": "https://niagaapps.niaga-logistics.com/apps/invoice/list",
             "type": "PAY_RETURN",
             "isDeeplink": "N"
           },

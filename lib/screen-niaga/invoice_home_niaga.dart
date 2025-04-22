@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:niaga_apps_mobile/model/niaga/merchant_code.dart';
 import 'package:niaga_apps_mobile/screen/dahboard.dart';
 import 'package:niaga_apps_mobile/screen/profile.dart';
 import 'package:niaga_apps_mobile/tracking/tracking.dart';
@@ -57,6 +58,10 @@ class _MyInvoiceHomeNiagaPageState extends State<MyInvoiceHomeNiagaPage>
   List<InvoiceItemAccesses> onProcessInvoices = [];
   List<InvoiceItemAccesses> filteredListUnpaid = [];
   List<InvoiceItemAccesses> filteredListPaid = [];
+  List<MerchantCodeAccesses> merchantCodeModellist = [];
+
+  String? merchantId;
+  String? subMerchantId;
 
   TextEditingController _noInvoice = TextEditingController();
   TextEditingController _noOrder = TextEditingController();
@@ -125,7 +130,8 @@ class _MyInvoiceHomeNiagaPageState extends State<MyInvoiceHomeNiagaPage>
   @override
   void initState() {
     super.initState();
-    // loadSelectedInvoices();
+    BlocProvider.of<InvoiceNiagaCubit>(context)
+        .merchantCode(); // loadSelectedInvoices();
     _tabController = TabController(length: 3, vsync: this)
       ..addListener(() {
         if (_tabController.indexIsChanging) {
@@ -952,6 +958,15 @@ class _MyInvoiceHomeNiagaPageState extends State<MyInvoiceHomeNiagaPage>
               noResultsPaid = true;
             } else if (state is DownloadInvoiceSuccess) {
               await downloadSuccess();
+            } else if (state is MerchantCodeSuccess) {
+              merchantCodeModellist.clear();
+              merchantCodeModellist = state.response;
+              print(
+                  'Merchant Code Names: ${merchantCodeModellist.map((e) => e.name).toList()}');
+              print(
+                  'Merchant Code Values: ${merchantCodeModellist.map((e) => e.value).toList()}');
+              print(
+                  'Merchant Code Descriptions: ${merchantCodeModellist.map((e) => e.description).toList()}');
             }
           },
           builder: (context, state) {
@@ -1753,19 +1768,41 @@ class _MyInvoiceHomeNiagaPageState extends State<MyInvoiceHomeNiagaPage>
                             selectedCabang = invoiceItem.cabang;
                           }
 
-                          String merchantId = '';
-                          String subMerchantId = '';
+                          // String merchantId = '';
+                          // String subMerchantId = '';
 
-                          if (invoiceItem.cabang == 'SBY') {
-                            merchantId = 'SGWNIAGALOGISTIK';
-                            subMerchantId = '60e83314016d7595781e1ea3d94a76d4';
-                          } else if (invoiceItem.cabang == 'JKT') {
-                            merchantId = 'SGWNIAGA2';
-                            subMerchantId = '7c339a6d0b151e51a4ea1c66d2cf56cc';
-                          } else if (invoiceItem.cabang == 'MKS') {
-                            merchantId = 'SGWNIAGA3';
-                            subMerchantId = '037e8ec7113fb45c9827bd73040be3c9';
-                          }
+                          // if (invoiceItem.cabang == 'SBY') {
+                          //   merchantId = 'SGWNIAGALOGISTIK';
+                          //   subMerchantId = '60e83314016d7595781e1ea3d94a76d4';
+                          // } else if (invoiceItem.cabang == 'JKT') {
+                          //   merchantId = 'SGWNIAGA2';
+                          //   subMerchantId = '7c339a6d0b151e51a4ea1c66d2cf56cc';
+                          // } else if (invoiceItem.cabang == 'MKS') {
+                          //   merchantId = 'SGWNIAGA3';
+                          //   subMerchantId = '037e8ec7113fb45c9827bd73040be3c9';
+                          // }
+
+                          print('invoiceItem.cabang: "${invoiceItem.cabang}"');
+                          print(
+                              'Available merchant names: ${merchantCodeModellist.map((e) => '"${e.name}"').toList()}');
+
+                          final selectedMerchant =
+                              merchantCodeModellist.firstWhere(
+                            (merchant) =>
+                                merchant.name!.trim().toUpperCase() ==
+                                invoiceItem.cabang!.trim().toUpperCase(),
+                            orElse: () {
+                              print(
+                                  'Error: No merchant found for cabang: ${invoiceItem.cabang}');
+                              return MerchantCodeAccesses(
+                                value: 'defaultMerchantId',
+                                description: 'defaultSubMerchantId',
+                              );
+                            },
+                          );
+
+                          merchantId = selectedMerchant.value;
+                          subMerchantId = selectedMerchant.description;
 
                           _selectedInvoices[invoiceKey] = {
                             'isSelected': value ?? false,
@@ -2312,7 +2349,7 @@ class _MyInvoiceHomeNiagaPageState extends State<MyInvoiceHomeNiagaPage>
                   SizedBox(width: 10),
                 Flexible(
                   child: SizedBox(
-                    width: 120,
+                    width: 140,
                     height: 40,
                     child: Material(
                       borderRadius: BorderRadius.circular(7.0),
@@ -2357,7 +2394,7 @@ class _MyInvoiceHomeNiagaPageState extends State<MyInvoiceHomeNiagaPage>
                               ? 'Unduh'
                               : 'Download',
                           style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 10,
                               color: _isCombinedPayment == true
                                   ? Colors.white
                                   : Colors.red[900],
@@ -2371,7 +2408,7 @@ class _MyInvoiceHomeNiagaPageState extends State<MyInvoiceHomeNiagaPage>
                 SizedBox(width: 10),
                 Flexible(
                   child: SizedBox(
-                    width: 80,
+                    width: 90,
                     height: 40,
                     child: Material(
                       borderRadius: BorderRadius.circular(7.0),
@@ -2428,397 +2465,3 @@ class _MyInvoiceHomeNiagaPageState extends State<MyInvoiceHomeNiagaPage>
     );
   }
 }
-
-// Widget _buildInvoiceList(List<InvoiceItemAccesses> invoices) {
-//   return ListView.builder(
-//     itemCount: invoices.length,
-//     itemBuilder: (context, index) {
-//       var invoiceItem = invoices[index];
-//       return _buildInvoiceCard(context, invoiceItem);
-//     },
-//   );
-// }
-
-// Widget _buildInvoiceCard(InvoiceItemAccesses invoiceItem) {
-// Widget _buildInvoiceCard(
-//     BuildContext context, InvoiceItemAccesses invoiceItem) {
-//   // Parse the 'tanggalJatuhTempo' as a DateTime object
-//   DateTime jatuhTempoDate =
-//       DateFormat('yyyy-MM-dd').parse(invoiceItem.tanggalJatuhTempo.toString());
-//   DateTime today = DateTime.now();
-
-//   return Container(
-//     margin: EdgeInsets.all(12),
-//     // height: 200, // Adjust according to your UI
-//     decoration: BoxDecoration(
-//       // color: Colors.grey[200],
-//       color: Colors.white,
-//       borderRadius: BorderRadius.circular(20),
-//       border: Border.all(
-//         color: Colors.grey, // Red border color
-//         width: 2.0, // Border width
-//       ),
-//     ),
-//     child: Padding(
-//       padding: EdgeInsets.all(12.0),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         mainAxisAlignment: MainAxisAlignment.spaceAround,
-//         children: [
-//           Text(
-//             invoiceItem.invoiceNumber.toString(),
-//             style: TextStyle(
-//                 color: Colors.black, fontSize: 14, fontFamily: 'Poppinss'),
-//           ),
-//           SizedBox(height: 15),
-//           Table(
-//             columnWidths: {
-//               0: FlexColumnWidth(3),
-//               1: FlexColumnWidth(1),
-//               2: FlexColumnWidth(5),
-//             },
-//             children: [
-//               TableRow(children: [
-//                 //tipe pengiriman
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       'Tipe Pengiriman',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       ':',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       // data.type!,
-//                       invoiceItem.typePengiriman.toString(),
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 )
-//               ]),
-//               //volume
-//               TableRow(children: [
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       'Volume',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       ':',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                     child: Padding(
-//                   padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                   child: Text(
-//                     invoiceItem.volume.toString(),
-//                     style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                   ),
-//                 ))
-//               ]),
-//               //Rute Pengiriman
-//               TableRow(children: [
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       'Rute Pengiriman',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       ':',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                     child: Padding(
-//                   padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                   child: Text(
-//                     invoiceItem.rute.toString(),
-//                     style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                   ),
-//                 ))
-//               ]),
-//               //No. Packing List
-//               TableRow(children: [
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       'No. Packing List',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       ':',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                     child: Padding(
-//                   padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                   child: Text(
-//                     invoiceItem.noPL.toString(),
-//                     style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                   ),
-//                 ))
-//               ]),
-//               //Total
-//               TableRow(children: [
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       'Total',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                   child: Padding(
-//                     padding:
-//                         EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                     child: Text(
-//                       ':',
-//                       style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                     ),
-//                   ),
-//                 ),
-//                 TableCell(
-//                     child: Padding(
-//                   padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-//                   child: Text(
-//                     // "Rp " + invoiceItem.totalInvoice.toString(),
-//                     '${invoiceItem.formattedTotalInvoice}',
-//                     style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                   ),
-//                 ))
-//               ]),
-//             ],
-//           ),
-//           SizedBox(height: 10),
-//           Container(
-//             padding:
-//                 EdgeInsets.all(6.0), // Add some padding inside the container
-//             decoration: BoxDecoration(
-//               color: Colors.white, // You can set a background color if needed
-//               border: Border.all(
-//                 color: Color.fromARGB(255, 184, 33, 22),
-//                 width: 2.0, // Border width
-//               ),
-//               borderRadius:
-//                   BorderRadius.circular(20.0), // Circular border with radius 10
-//             ),
-//             child: Row(
-//               mainAxisSize: MainAxisSize.min,
-//               children: [
-//                 Icon(
-//                   Icons.access_time, // Clock icon
-//                   color: Colors.black, // Icon color
-//                   size: 20.0, // Icon size
-//                 ),
-//                 SizedBox(width: 4),
-//                 Text(
-//                   'Jatuh Tempo :  ${invoiceItem.tanggalJatuhTempo}',
-//                   style: TextStyle(fontFamily: 'Poppins Med', fontSize: 12),
-//                 ),
-//               ],
-//             ),
-//           ),
-//           SizedBox(height: 15),
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.end,
-//             children: [
-//               // if (invoiceItem.statusPayment == "not_paid")
-//               if (invoiceItem.statusPayment == "not_paid" &&
-//                   jatuhTempoDate.isBefore(today))
-//                 Flexible(
-//                   child: SizedBox(
-//                     width: 75,
-//                     height: 40,
-//                     child: Material(
-//                       borderRadius: BorderRadius.circular(7.0),
-//                       // color: Colors.red[900],
-//                       color: _isCombinedPayment ? Colors.grey : Colors.red[900]!,
-//                       child: MaterialButton(
-//                         onPressed: () {
-//                           Navigator.push(context,
-//                               MaterialPageRoute(builder: (context) {
-//                             return MetodePembayaranNiagaPage(
-//                                 invoice: invoiceItem);
-//                           }));
-//                         },
-//                         child: Text(
-//                           'Bayar',
-//                           style: TextStyle(
-//                               fontSize: 12,
-//                               color: Colors.white,
-//                               fontFamily: 'Poppins Med'),
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               if (invoiceItem.statusPayment == "paid") SizedBox(width: 10),
-//               if (invoiceItem.statusPayment == "paid")
-//                 Flexible(
-//                   child: SizedBox(
-//                     width: 80,
-//                     height: 40,
-//                     child: Material(
-//                       borderRadius: BorderRadius.circular(7.0),
-//                       color: Color.fromARGB(255, 40, 185, 45),
-//                       child: OutlinedButton(
-//                         style: OutlinedButton.styleFrom(
-//                           // Smaller size
-//                           minimumSize: Size(100, 50),
-//                           side: BorderSide(
-//                               color: Color.fromARGB(255, 40, 185, 45), width: 2),
-//                           shape: RoundedRectangleBorder(
-//                             borderRadius: BorderRadius.circular(7.0),
-//                           ),
-//                           backgroundColor: Color.fromARGB(255, 40, 185, 45),
-//                         ),
-//                         onPressed: () {},
-//                         child: Text(
-//                           'Lunas',
-//                           style: TextStyle(
-//                               fontSize: 12,
-//                               color: Colors.white,
-//                               fontFamily: 'Poppins Med'), // Smaller font
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               SizedBox(width: 10),
-//               Flexible(
-//                 child: SizedBox(
-//                   width: 120,
-//                   height: 40,
-//                   child: Material(
-//                     borderRadius: BorderRadius.circular(7.0),
-//                     color: Colors.white,
-//                     child: OutlinedButton(
-//                       style: OutlinedButton.styleFrom(
-//                         // Smaller size
-//                         minimumSize: Size(100, 50),
-//                         side: BorderSide(color: Colors.red[900]!, width: 2),
-//                         shape: RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(7.0),
-//                         ),
-//                         backgroundColor: Colors.white,
-//                       ),
-//                       onPressed: () {
-//                         final invoiceNumber = invoiceItem.invoiceNumber;
-//                         final volume = invoiceItem
-//                             .volume; // Ensure you have a 'volume' value
-
-//                         // if (invoiceNumber != null) {
-//                         if (invoiceNumber != null && volume != null) {
-//                           BlocProvider.of<InvoiceNiagaCubit>(context)
-//                               .downloadinvoice(invoiceNumber, volume);
-//                         } else {
-//                           // Handle the case where invoiceNumber is null (e.g., show an error message)
-//                           ScaffoldMessenger.of(context).showSnackBar(
-//                             SnackBar(content: Text('Invoice number is missing')),
-//                           );
-//                         }
-//                       },
-//                       child: Text(
-//                         'Download',
-//                         style: TextStyle(
-//                             fontSize: 12,
-//                             color: Colors.red[900],
-//                             fontFamily: 'Poppins Med'), // Smaller font
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//               SizedBox(width: 10),
-//               Flexible(
-//                 child: SizedBox(
-//                   width: 80,
-//                   height: 40,
-//                   child: Material(
-//                     borderRadius: BorderRadius.circular(7.0),
-//                     color: Colors.white,
-//                     child: OutlinedButton(
-//                       style: OutlinedButton.styleFrom(
-//                         // Smaller size
-//                         minimumSize: Size(100, 50),
-//                         side: BorderSide(color: Colors.red[900]!, width: 2),
-//                         shape: RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(7.0),
-//                         ),
-//                         backgroundColor: Colors.white,
-//                       ),
-//                       onPressed: () {
-//                         Navigator.push(context,
-//                             MaterialPageRoute(builder: (context) {
-//                           // return DetailInvoiceHomeNiagaPage();
-//                           return DetailInvoiceHomeNiagaPage(invoice: invoiceItem);
-//                         }));
-//                       },
-//                       child: Text(
-//                         'Detail',
-//                         style: TextStyle(
-//                             fontSize: 12,
-//                             color: Colors.red[900],
-//                             fontFamily: 'Poppins Med'), // Smaller font
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ],
-//           )
-//         ],
-//       ),
-//     ),
-//   );
-// }

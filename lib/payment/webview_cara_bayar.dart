@@ -5,16 +5,22 @@ import '../screen-niaga/home_niaga.dart';
 class WebViewCaraBayarPage extends StatefulWidget {
   final String url;
 
-  WebViewCaraBayarPage({required this.url});
+  const WebViewCaraBayarPage({required this.url, super.key});
 
   @override
-  _WebViewCaraBayarPageState createState() => _WebViewCaraBayarPageState();
+  State<WebViewCaraBayarPage> createState() => _WebViewCaraBayarPageState();
 }
 
 class _WebViewCaraBayarPageState extends State<WebViewCaraBayarPage> {
+  late final WebViewController _controller;
+
   @override
   void initState() {
     super.initState();
+
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse(widget.url));
   }
 
   @override
@@ -33,10 +39,7 @@ class _WebViewCaraBayarPageState extends State<WebViewCaraBayarPage> {
         appBar: AppBar(
           title: Text('Pembayaran'),
         ),
-        body: WebView(
-          initialUrl: widget.url,
-          javascriptMode: JavascriptMode.unrestricted,
-        ),
+        body: WebViewWidget(controller: _controller),
       ),
     );
   }

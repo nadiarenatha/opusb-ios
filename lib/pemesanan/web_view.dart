@@ -1,38 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-class WebViewPage extends StatelessWidget {
+class WebViewPage extends StatefulWidget {
   final String url;
 
-  WebViewPage({required this.url});
+  const WebViewPage({Key? key, required this.url}) : super(key: key);
+
+  @override
+  State<WebViewPage> createState() => _WebViewPageState();
+}
+
+class _WebViewPageState extends State<WebViewPage> {
+  late final WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (String url) {
+            debugPrint('Page started loading: $url');
+          },
+          onPageFinished: (String url) {
+            debugPrint('Page finished loading: $url');
+          },
+          onWebResourceError: (WebResourceError error) {
+            debugPrint('Error: ${error.description}');
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.url));
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pembayaran'),
+        title: const Text('Pembayaran'),
       ),
-      body: WebView(
-        initialUrl: url,
-        javascriptMode: JavascriptMode.unrestricted,
-        onWebViewCreated: (WebViewController webViewController) {
-          // Use webViewController to interact with the WebView
-          // For example, you can store it in a variable to use it later
-          // _controller = webViewController;
-        },
-        // onPageStarted: (String url) {
-        //   // Handle page start event
-        // },
-        // onPageFinished: (String url) {
-        //   // Handle page finish event
-        // },
-        // onWebResourceError: (WebResourceError error) {
-        //   // Handle web resource error
-        // },
-        // onProgress: (int progress) {
-        //   // Handle web view progress
-        // },
-      ),
+      body: WebViewWidget(controller: _controller),
     );
   }
 }

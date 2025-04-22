@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:niaga_apps_mobile/model/niaga/merchant_code.dart';
 import 'package:niaga_apps_mobile/servicelocator.dart';
+import 'package:niaga_apps_mobile/services/niaga%20service/invoice/merchant_code_service.dart';
 import 'package:niaga_apps_mobile/shared/widget/logger.dart';
 import '../../model/niaga/bank_code.dart';
 import '../../model/niaga/delete_invoice.dart';
@@ -148,6 +150,22 @@ class InvoiceGroupCubit extends Cubit<InvoiceGroupState> {
     } catch (e) {
       log.e('detailMultipleInvoice error: $e');
       emit(DetailMultipleInvoiceFailure('$e'));
+    }
+  }
+
+  //get merchant code
+  Future<dynamic> merchantCodeGroup() async {
+    log.i('MerchantCodeCubit');
+    try {
+      emit(MerchantCodeGroupInProgress());
+
+      final List<MerchantCodeAccesses> response =
+          await sl<MerchantCodeService>().getMerchantCode();
+
+      emit(MerchantCodeGroupSuccess(response: response));
+    } catch (e) {
+      log.e('MerchantCodeCubit error: $e');
+      emit(MerchantCodeGroupFailure('$e'));
     }
   }
 }

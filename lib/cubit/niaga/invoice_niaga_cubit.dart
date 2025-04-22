@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:niaga_apps_mobile/model/niaga/merchant_code.dart';
 import 'package:niaga_apps_mobile/servicelocator.dart';
+import 'package:niaga_apps_mobile/services/niaga%20service/invoice/merchant_code_service.dart';
 import 'package:niaga_apps_mobile/shared/widget/logger.dart';
 import '../../model/niaga/close_invoice_detail_niaga.dart';
 import '../../model/niaga/close_invoice_niaga.dart';
@@ -328,6 +330,22 @@ class InvoiceNiagaCubit extends Cubit<InvoiceNiagaState> {
     } catch (e) {
       log.e('logDetaiInvoicelFCL error: $e');
       emit(LogDetailInvoiceFCLFailure('$e'));
+    }
+  }
+
+  //get merchant code
+  Future<dynamic> merchantCode() async {
+    log.i('MerchantCodeCubit');
+    try {
+      emit(MerchantCodeInProgress());
+
+      final List<MerchantCodeAccesses> response =
+          await sl<MerchantCodeService>().getMerchantCode();
+
+      emit(MerchantCodeSuccess(response: response));
+    } catch (e) {
+      log.e('MerchantCodeCubit error: $e');
+      emit(MerchantCodeFailure('$e'));
     }
   }
 }

@@ -155,6 +155,7 @@ class _KebijakanNiagaPageState extends State<KebijakanNiagaPage> {
                   ),
                 ),
               ),
+              SizedBox(height: 20),
             ],
           ),
         );

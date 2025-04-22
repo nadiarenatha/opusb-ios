@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:niaga_apps_mobile/model/niaga/merchant_code.dart';
 import '../cubit/niaga/invoice_group_cubit.dart';
 import '../cubit/niaga/invoice_niaga_cubit.dart';
 import '../model/niaga/detail_invoice_group.dart';
@@ -49,6 +50,10 @@ class _MyInvoiceNiagaPageState extends State<MyInvoiceNiagaPage>
   List<InvoiceItemAccesses> onProcessInvoices = [];
   List<InvoiceItemAccesses> filteredListUnpaid = [];
   List<InvoiceItemAccesses> filteredListPaid = [];
+  List<MerchantCodeAccesses> merchantCodeModellist = [];
+
+  String? merchantId;
+  String? subMerchantId;
 
   //untuk calendar pada pop up dialog search dengan nama _dateController
   //2 nama berbeda karena tgl di calendar berbeda
@@ -95,6 +100,7 @@ class _MyInvoiceNiagaPageState extends State<MyInvoiceNiagaPage>
   @override
   void initState() {
     super.initState();
+    BlocProvider.of<InvoiceNiagaCubit>(context).merchantCode();
     _tabController = TabController(length: 3, vsync: this)
       ..addListener(() {
         if (_tabController.indexIsChanging) {
@@ -720,6 +726,15 @@ class _MyInvoiceNiagaPageState extends State<MyInvoiceNiagaPage>
             noResultsPaid = true;
           } else if (state is DownloadInvoiceSuccess) {
             await downloadSuccess();
+          } else if (state is MerchantCodeSuccess) {
+            merchantCodeModellist.clear();
+            merchantCodeModellist = state.response;
+            print(
+                'Merchant Code Names: ${merchantCodeModellist.map((e) => e.name).toList()}');
+            print(
+                'Merchant Code Values: ${merchantCodeModellist.map((e) => e.value).toList()}');
+            print(
+                'Merchant Code Descriptions: ${merchantCodeModellist.map((e) => e.description).toList()}');
           }
         },
         builder: (context, state) {
@@ -1545,19 +1560,41 @@ class _MyInvoiceNiagaPageState extends State<MyInvoiceNiagaPage>
                           if (selectedCabang == null && value == true) {
                             selectedCabang = invoiceItem.cabang;
                           }
-                          String merchantId = '';
-                          String subMerchantId = '';
+                          // String merchantId = '';
+                          // String subMerchantId = '';
 
-                          if (invoiceItem.cabang == 'SBY') {
-                            merchantId = 'SGWNIAGALOGISTIK';
-                            subMerchantId = '60e83314016d7595781e1ea3d94a76d4';
-                          } else if (invoiceItem.cabang == 'JKT') {
-                            merchantId = 'SGWNIAGA2';
-                            subMerchantId = '7c339a6d0b151e51a4ea1c66d2cf56cc';
-                          } else if (invoiceItem.cabang == 'MKS') {
-                            merchantId = 'SGWNIAGA3';
-                            subMerchantId = '037e8ec7113fb45c9827bd73040be3c9';
-                          }
+                          // if (invoiceItem.cabang == 'SBY') {
+                          //   merchantId = 'SGWNIAGALOGISTIK';
+                          //   subMerchantId = '60e83314016d7595781e1ea3d94a76d4';
+                          // } else if (invoiceItem.cabang == 'JKT') {
+                          //   merchantId = 'SGWNIAGA2';
+                          //   subMerchantId = '7c339a6d0b151e51a4ea1c66d2cf56cc';
+                          // } else if (invoiceItem.cabang == 'MKS') {
+                          //   merchantId = 'SGWNIAGA3';
+                          //   subMerchantId = '037e8ec7113fb45c9827bd73040be3c9';
+                          // }
+
+                          print('invoiceItem.cabang: "${invoiceItem.cabang}"');
+                          print(
+                              'Available merchant names: ${merchantCodeModellist.map((e) => '"${e.name}"').toList()}');
+
+                          final selectedMerchant =
+                              merchantCodeModellist.firstWhere(
+                            (merchant) =>
+                                merchant.name!.trim().toUpperCase() ==
+                                invoiceItem.cabang!.trim().toUpperCase(),
+                            orElse: () {
+                              print(
+                                  'Error: No merchant found for cabang: ${invoiceItem.cabang}');
+                              return MerchantCodeAccesses(
+                                value: 'defaultMerchantId',
+                                description: 'defaultSubMerchantId',
+                              );
+                            },
+                          );
+
+                          merchantId = selectedMerchant.value;
+                          subMerchantId = selectedMerchant.description;
 
                           _selectedInvoices[invoiceKey] = {
                             'isSelected': value ?? false,
@@ -2106,7 +2143,7 @@ class _MyInvoiceNiagaPageState extends State<MyInvoiceNiagaPage>
                   SizedBox(width: 10),
                 Flexible(
                   child: SizedBox(
-                    width: 120,
+                    width: 126,
                     height: 40,
                     child: Material(
                       borderRadius: BorderRadius.circular(7.0),
@@ -2152,7 +2189,7 @@ class _MyInvoiceNiagaPageState extends State<MyInvoiceNiagaPage>
                               ? 'Unduh'
                               : 'Download',
                           style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 10,
                               // color: Colors.red[900],
                               color: _isCombinedPayment == true
                                   ? Colors.white
@@ -2166,7 +2203,7 @@ class _MyInvoiceNiagaPageState extends State<MyInvoiceNiagaPage>
                 SizedBox(width: 10),
                 Flexible(
                   child: SizedBox(
-                    width: 80,
+                    width: 90,
                     height: 40,
                     child: Material(
                       borderRadius: BorderRadius.circular(7.0),

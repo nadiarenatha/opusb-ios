@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:niaga_apps_mobile/model/niaga/merchant_code.dart';
 import '../cubit/niaga/invoice_group_cubit.dart';
 import '../cubit/niaga/invoice_niaga_cubit.dart';
 import '../model/niaga/daftar-pesanan/daftar_pesanan.dart';
@@ -50,6 +51,10 @@ class _DetaiInvoiceResiOrderPageState extends State<DetaiInvoiceResiOrderPage>
   List<InvoiceItemAccesses> onProcessInvoices = [];
   List<InvoiceItemAccesses> filteredListUnpaid = [];
   List<InvoiceItemAccesses> filteredListPaid = [];
+  List<MerchantCodeAccesses> merchantCodeModellist = [];
+
+  String? merchantId;
+  String? subMerchantId;
 
   //untuk calendar pada pop up dialog search dengan nama _dateController
   //2 nama berbeda karena tgl di calendar berbeda
@@ -96,6 +101,7 @@ class _DetaiInvoiceResiOrderPageState extends State<DetaiInvoiceResiOrderPage>
   @override
   void initState() {
     super.initState();
+    BlocProvider.of<InvoiceGroupCubit>(context).merchantCodeGroup();
     _tabController = TabController(length: 3, vsync: this)
       ..addListener(() {
         if (_tabController.indexIsChanging) {
@@ -426,7 +432,10 @@ class _DetaiInvoiceResiOrderPageState extends State<DetaiInvoiceResiOrderPage>
             }
             return BlocConsumer<InvoiceGroupCubit, InvoiceGroupState>(
                 listener: (context, state) async {
-              if (state is MultipleInvoiceSuccess) {
+              if (state is MerchantCodeGroupSuccess) {
+                merchantCodeModellist.clear();
+                merchantCodeModellist = state.response;
+              } else if (state is MultipleInvoiceSuccess) {
                 // invoiceGroup = state.response;
                 final noInvGroup =
                     state.response?.noInvGroup ?? 'DefaultInvoiceGroup';
@@ -1179,19 +1188,41 @@ class _DetaiInvoiceResiOrderPageState extends State<DetaiInvoiceResiOrderPage>
                           if (selectedCabang == null && value == true) {
                             selectedCabang = invoiceItem.cabang;
                           }
-                          String merchantId = '';
-                          String subMerchantId = '';
+                          // String merchantId = '';
+                          // String subMerchantId = '';
 
-                          if (invoiceItem.cabang == 'SBY') {
-                            merchantId = 'SGWNIAGALOGISTIK';
-                            subMerchantId = '60e83314016d7595781e1ea3d94a76d4';
-                          } else if (invoiceItem.cabang == 'JKT') {
-                            merchantId = 'SGWNIAGA2';
-                            subMerchantId = '7c339a6d0b151e51a4ea1c66d2cf56cc';
-                          } else if (invoiceItem.cabang == 'MKS') {
-                            merchantId = 'SGWNIAGA3';
-                            subMerchantId = '037e8ec7113fb45c9827bd73040be3c9';
-                          }
+                          // if (invoiceItem.cabang == 'SBY') {
+                          //   merchantId = 'SGWNIAGALOGISTIK';
+                          //   subMerchantId = '60e83314016d7595781e1ea3d94a76d4';
+                          // } else if (invoiceItem.cabang == 'JKT') {
+                          //   merchantId = 'SGWNIAGA2';
+                          //   subMerchantId = '7c339a6d0b151e51a4ea1c66d2cf56cc';
+                          // } else if (invoiceItem.cabang == 'MKS') {
+                          //   merchantId = 'SGWNIAGA3';
+                          //   subMerchantId = '037e8ec7113fb45c9827bd73040be3c9';
+                          // }
+
+                          print('invoiceItem.cabang: "${invoiceItem.cabang}"');
+                          print(
+                              'Available merchant names: ${merchantCodeModellist.map((e) => '"${e.name}"').toList()}');
+
+                          final selectedMerchant =
+                              merchantCodeModellist.firstWhere(
+                            (merchant) =>
+                                merchant.name!.trim().toUpperCase() ==
+                                invoiceItem.cabang!.trim().toUpperCase(),
+                            orElse: () {
+                              print(
+                                  'Error: No merchant found for cabang: ${invoiceItem.cabang}');
+                              return MerchantCodeAccesses(
+                                value: 'defaultMerchantId',
+                                description: 'defaultSubMerchantId',
+                              );
+                            },
+                          );
+
+                          merchantId = selectedMerchant.value;
+                          subMerchantId = selectedMerchant.description;
 
                           _selectedInvoices[invoiceKey] = {
                             'isSelected': value ?? false,

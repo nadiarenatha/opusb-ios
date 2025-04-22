@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:niaga_apps_mobile/model/niaga/merchant_code.dart';
 import 'package:niaga_apps_mobile/payment/webview_espay_page.dart';
 import 'package:niaga_apps_mobile/profile/profil_niaga.dart';
 import '../Invoice/menu_invoice_niaga.dart';
@@ -37,6 +38,7 @@ class _MetodePembayaranNiagaPageState extends State<MetodePembayaranNiagaPage> {
   List<BankCodeAccesses> bankCodeList = [];
   BankCodeAccesses? method;
   List<FeeEspayAccesses> feeEspayList = [];
+  List<MerchantCodeAccesses> merchantCodeModellist = [];
 
   String? selectedMethodName;
   String? selectedMethodValue;
@@ -67,6 +69,7 @@ class _MetodePembayaranNiagaPageState extends State<MetodePembayaranNiagaPage> {
     // BlocProvider.of<EspayCubit>(context).espayValidation();
     _espayCubit = BlocProvider.of<EspayCubit>(context);
     BlocProvider.of<EspayCubit>(context).feeEspay();
+    BlocProvider.of<InvoiceGroupCubit>(context).merchantCodeGroup();
   }
 
   // void _validatePayment(String methodName, String methodValue) {
@@ -125,15 +128,48 @@ class _MetodePembayaranNiagaPageState extends State<MetodePembayaranNiagaPage> {
 
       // Pass method details to the Cubit for validation
 
-      if (widget.invoice.cabang == 'SBY') {
-        merchantId = 'SGWNIAGALOGISTIK';
-        subMerchantId = '60e83314016d7595781e1ea3d94a76d4';
-      } else if (widget.invoice.cabang == 'JKT') {
-        merchantId = 'SGWNIAGA2';
-        subMerchantId = '7c339a6d0b151e51a4ea1c66d2cf56cc';
-      } else if (widget.invoice.cabang == 'MKS') {
-        merchantId = 'SGWNIAGA3';
-        subMerchantId = '037e8ec7113fb45c9827bd73040be3c9';
+      // if (widget.invoice.cabang == 'SBY') {
+      //   merchantId = 'SGWNIAGALOGISTIK';
+      //   subMerchantId = '60e83314016d7595781e1ea3d94a76d4';
+      // } else if (widget.invoice.cabang == 'JKT') {
+      //   merchantId = 'SGWNIAGA2';
+      //   subMerchantId = '7c339a6d0b151e51a4ea1c66d2cf56cc';
+      // } else if (widget.invoice.cabang == 'MKS') {
+      //   merchantId = 'SGWNIAGA3';
+      //   subMerchantId = '037e8ec7113fb45c9827bd73040be3c9';
+      // }
+
+      if (merchantCodeModellist.isEmpty) {
+        print('Error: Merchant list is empty. Please ensure it is populated.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Merchant list is empty. Please try again.')),
+        );
+        return;
+      }
+
+      final selectedMerchant = merchantCodeModellist.firstWhere(
+        (merchant) => merchant.name == widget.invoice.cabang,
+        orElse: () {
+          print(
+              'Error: No merchant found for cabang: ${widget.invoice.cabang}');
+          return MerchantCodeAccesses(value: '', description: '');
+        },
+      );
+
+      merchantId = selectedMerchant.value;
+      subMerchantId = selectedMerchant.description;
+
+      if (merchantId == null ||
+          subMerchantId == null ||
+          merchantId!.isEmpty ||
+          subMerchantId!.isEmpty) {
+        print(
+            'Error: Merchant details not found for cabang: ${widget.invoice.cabang}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Merchant details not found. Please try again.')),
+        );
+        return;
       }
       print("Selected merchantId: $merchantId");
       print("Selected subMerchantId: $subMerchantId");
@@ -498,6 +534,10 @@ class _MetodePembayaranNiagaPageState extends State<MetodePembayaranNiagaPage> {
                     content: Text('Please select a payment method first.')),
               );
             }
+          } else if (state is MerchantCodeGroupSuccess) {
+            merchantCodeModellist.clear();
+            merchantCodeModellist = state.response;
+            print('merchantCodeModellist: $merchantCodeModellist');
           }
         }, builder: (context, state) {
           if (state is SingleInvoiceInProgress) {
@@ -1274,120 +1314,6 @@ class _MetodePembayaranNiagaPageState extends State<MetodePembayaranNiagaPage> {
             "Credit Card",
             style: TextStyle(fontSize: 15, fontFamily: 'Poppinss'),
           ),
-          // InkWell(
-          //   onTap: () {
-          //     setState(() {
-          //       // Close the virtualAccount dialog first
-          //       Navigator.of(context).pop();
-
-          //       selectedPaymentMethod = "Credit Card"; // Update the text
-          //     });
-          //   },
-          //   child: Row(
-          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //     children: [
-          //       Expanded(
-          //         child: SingleChildScrollView(
-          //           scrollDirection: Axis.horizontal,
-          //           child: Row(
-          //             mainAxisAlignment: MainAxisAlignment.spaceAround,
-          //             children: [
-          //               //VISA
-          //               Padding(
-          //                 padding: const EdgeInsets.only(right: 5),
-          //                 child: SizedBox(
-          //                     width: 100,
-          //                     height: 100,
-          //                     child: Image.asset(
-          //                       'assets/visa.png',
-          //                     )),
-          //               ),
-          //               //Master Card
-          //               Padding(
-          //                 padding: const EdgeInsets.only(right: 5),
-          //                 child: SizedBox(
-          //                     width: 100,
-          //                     height: 100,
-          //                     child: Image.asset(
-          //                       'assets/master.png',
-          //                     )),
-          //               ),
-          //               // Padding(
-          //               //   padding: const EdgeInsets.all(8.0),
-          //               //   child: Container(
-          //               //     decoration: BoxDecoration(
-          //               //       color: Colors
-          //               //           .white, // Background color of the outer container
-          //               //       border: Border.all(
-          //               //         color: Colors.grey, // Grey border color
-          //               //         width: 2.0, // Border width
-          //               //       ),
-          //               //       boxShadow: [
-          //               //         BoxShadow(
-          //               //           // Grey shadow color with opacity
-          //               //           color: Colors.grey.withOpacity(0.5),
-          //               //           spreadRadius: 2, // How far the shadow spreads
-          //               //           blurRadius: 5, // How much the shadow is blurred
-          //               //           offset: Offset(0, 3), // Position of the shadow
-          //               //         ),
-          //               //       ],
-          //               //       borderRadius: BorderRadius.circular(
-          //               //           8), // Optional: Add border radius
-          //               //     ),
-          //               //     child: Padding(
-          //               //       padding: const EdgeInsets.all(8.0),
-          //               //       child: Image.asset('assets/mastercard logo.png'),
-          //               //     ),
-          //               //   ),
-          //               // ),
-          //               //JCB
-          //               Padding(
-          //                 padding: const EdgeInsets.only(right: 5),
-          //                 child: SizedBox(
-          //                     width: 100,
-          //                     height: 100,
-          //                     child: Image.asset(
-          //                       'assets/jcb.png',
-          //                     )),
-          //               ),
-          //               // Padding(
-          //               //   padding: const EdgeInsets.all(8.0),
-          //               //   child: Container(
-          //               //     decoration: BoxDecoration(
-          //               //       color: Colors
-          //               //           .white, // Background color of the outer container
-          //               //       border: Border.all(
-          //               //         color: Colors.grey, // Grey border color
-          //               //         width: 2.0, // Border width
-          //               //       ),
-          //               //       boxShadow: [
-          //               //         BoxShadow(
-          //               //           // Grey shadow color with opacity
-          //               //           color: Colors.grey.withOpacity(0.5),
-          //               //           spreadRadius: 2, // How far the shadow spreads
-          //               //           blurRadius: 5, // How much the shadow is blurred
-          //               //           offset: Offset(0, 3), // Position of the shadow
-          //               //         ),
-          //               //       ],
-          //               //       borderRadius: BorderRadius.circular(
-          //               //           8), // Optional: Add border radius
-          //               //     ),
-          //               //     child: Padding(
-          //               //       padding: const EdgeInsets.all(8.0),
-          //               //       child: Image.asset('assets/jcb logo.png'),
-          //               //     ),
-          //               //   ),
-          //               // ),
-          //             ],
-          //           ),
-          //         ),
-          //       ),
-          //       //next icon
-          //       Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-          //     ],
-          //   ),
-          // ),
-          //NEW
           BlocConsumer<InvoiceGroupCubit, InvoiceGroupState>(
             listener: (context, state) async {
               if (state is BankCodeSuccess) {
@@ -2021,84 +1947,6 @@ class _MetodePembayaranNiagaPageState extends State<MetodePembayaranNiagaPage> {
       ),
     );
   }
-
-  // metodeLainnya() {
-  //   return ConstrainedBox(
-  //     // constraints: BoxConstraints(maxHeight: 990, maxWidth: 300),
-  //     constraints: BoxConstraints(maxHeight: 990),
-  //     child: Column(
-  //       mainAxisSize: MainAxisSize.min,
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         // SizedBox(height: 20),
-  //         //QRIS
-  //         InkWell(
-  //           onTap: () {
-  //             setState(() {
-  //               // Close the virtualAccount dialog first
-  //               Navigator.of(context).pop();
-
-  //               // Close the pilihPembayaran dialog
-  //               Navigator.of(context).pop();
-  //               selectedPaymentMethod = "QRIS"; // Update the text
-  //             });
-  //           },
-  //           child: Row(
-  //             children: [
-  //               Padding(
-  //                 padding: const EdgeInsets.only(right: 5),
-  //                 child: SizedBox(
-  //                     width: 100,
-  //                     height: 100,
-  //                     child: Image.asset(
-  //                       'assets/qriss.png',
-  //                     )),
-  //               ),
-  //               Text(
-  //                 'QRIS',
-  //                 style: TextStyle(fontSize: 13, fontFamily: 'Poppins Bold'),
-  //               )
-  //             ],
-  //           ),
-  //         ),
-  //         Container(
-  //           height: 5,
-  //           color: Colors.grey[300],
-  //         ),
-  //         //BCA KLIK PAY
-  //         InkWell(
-  //           onTap: () {
-  //             setState(() {
-  //               // Close the virtualAccount dialog first
-  //               Navigator.of(context).pop();
-
-  //               // Close the pilihPembayaran dialog
-  //               Navigator.of(context).pop();
-  //               selectedPaymentMethod = "BCA KlikPay"; // Update the text
-  //             });
-  //           },
-  //           child: Row(
-  //             children: [
-  //               Padding(
-  //                 padding: const EdgeInsets.only(right: 5),
-  //                 child: SizedBox(
-  //                     width: 100,
-  //                     height: 100,
-  //                     child: Image.asset(
-  //                       'assets/klikpay.png',
-  //                     )),
-  //               ),
-  //               Text(
-  //                 'BCA KlikPay',
-  //                 style: TextStyle(fontSize: 13, fontFamily: 'Poppins Bold'),
-  //               )
-  //             ],
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   //NEW
   metodeLainnya(BuildContext context, List<BankCodeAccesses> bankCodeList) {
