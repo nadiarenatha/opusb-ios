@@ -153,7 +153,7 @@ class MyHttpOverrides extends HttpOverrides {
 
 class MyApp extends StatelessWidget {
   final String? niagaToken;
-  final Duration duration;
+  final Duration duration; 
 
   const MyApp(
       {Key? key,
